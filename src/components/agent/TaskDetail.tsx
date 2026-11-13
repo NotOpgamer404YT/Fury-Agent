@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Play, Pause, RotateCcw, CheckCircle2, XCircle as RejectIcon, Terminal, Cpu, Clock, ShieldCheck, ChevronDown, Send } from "lucide-react";
+import { Play, Pause, RotateCcw, CheckCircle2, XCircle as RejectIcon, Terminal, Cpu, Clock, ShieldCheck, ChevronDown, Send, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,8 @@ export function TaskDetail({ taskId }: { taskId: string }) {
   const [showEvents, setShowEvents] = useState(true);
   const [followUp, setFollowUp] = useState("");
   const [sending, setSending] = useState(false);
+  const [streamed, setStreamed] = useState("");
+  const [streaming, setStreaming] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const load = useCallback(async () => {
@@ -60,6 +62,30 @@ export function TaskDetail({ taskId }: { taskId: string }) {
     await fetch(`/api/v1/tasks/${taskId}/cancel`, { method: "POST" });
     setRunning(false);
     await load();
+  }
+
+  async function streamReply() {
+    setStreaming(true); setStreamed(""); setError("");
+    try {
+      const res = await fetch(`/api/v1/tasks/${taskId}/stream`, { method: "POST" });
+      if (!res.ok || !res.body) {
+        const j = await res.json().catch(() => ({}));
+        setError(j.error ?? "Streaming failed");
+        return;
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        setStreamed((prev) => prev + decoder.decode(value, { stream: true }));
+      }
+      await load();
+    } catch (e: any) {
+      setError(e?.message ?? "Streaming failed");
+    } finally {
+      setStreaming(false);
+    }
   }
 
   async function sendFollowUp(e: React.FormEvent) {
@@ -106,6 +132,11 @@ export function TaskDetail({ taskId }: { taskId: string }) {
             {!TERMINAL.includes(task.status) && task.status !== "waiting_approval" && (
               <Button size="sm" onClick={step} disabled={running}><Play className="h-4 w-4" /> {running ? "Running…" : "Run step"}</Button>
             )}
+            {task.mode !== "agent" && (
+              <Button size="sm" variant="secondary" onClick={streamReply} disabled={streaming}>
+                <Sparkles className="h-4 w-4" /> {streaming ? "Streaming…" : "Stream reply"}
+              </Button>
+            )}
             {task.status === "waiting_approval" && (
               <>
                 <Button size="sm" onClick={() => approve(true)}><CheckCircle2 className="h-4 w-4" /> Approve</Button>
@@ -134,6 +165,14 @@ export function TaskDetail({ taskId }: { taskId: string }) {
           <CardHeader><CardTitle>Conversation</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             {messages.length === 0 && <p className="text-sm text-muted">No messages yet. Run a step to start the agent.</p>}
+            {streamed && (
+              <div className="rounded-xl border border-accent/40 bg-accent/5 p-3">
+                <p className="mb-1 text-[11px] uppercase tracking-wide text-accent2">streaming{streaming ? "…" : " (saved)"}</p>
+                <div className="prose-fury max-w-none text-sm">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamed}</ReactMarkdown>
+                </div>
+              </div>
+            )}
             {messages.map((m) => (
               <div key={m.id} className={m.role === "user" ? "rounded-xl bg-accent/10 p-3" : m.role === "tool" ? "rounded-xl border border-border bg-panel p-3" : "rounded-xl bg-card p-3"}>
                 <p className="mb-1 flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted">

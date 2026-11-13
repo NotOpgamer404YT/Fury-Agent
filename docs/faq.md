@@ -36,6 +36,12 @@ The agent used its step budget (`maxSteps`, default 25). Split the request into 
 
 The 5-minute lease from a previous request is still held. Wait for it to expire or press Resume; the lock is cleared when a request finishes normally.
 
+## Why doesn't a reply stream in AGENT mode?
+
+AGENT mode can request write tools, so every model turn must pass permission checks and possibly wait for your
+approval. Those turns run through the bounded step endpoint. ASK and PLAN replies stream token-by-token from
+`POST /api/v1/tasks/{id}/stream`.
+
 ## Are tests run?
 
 No — unless your repository has GitHub Actions workflows, in which case Fury displays their status. Fury cannot execute repository code inside Vercel Functions, and it says so instead of inventing results.
