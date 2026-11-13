@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /projects
+Disallow: /tasks
+Disallow: /providers
+Disallow: /github
+Disallow: /settings
+Disallow: /api/
+
+Sitemap: /sitemap.xml
