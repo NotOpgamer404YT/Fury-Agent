@@ -4,6 +4,7 @@ import { EditorState, Compartment } from "@codemirror/state";
 import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter, drawSelection } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { bracketMatching, foldGutter, indentOnInput, syntaxHighlighting, defaultHighlightStyle } from "@codemirror/language";
+import { search, searchKeymap, highlightSelectionMatches } from "@codemirror/search";
 import { javascript } from "@codemirror/lang-javascript";
 import { json } from "@codemirror/lang-json";
 import { markdown } from "@codemirror/lang-markdown";
@@ -28,8 +29,9 @@ export function CodeEditor({ value, path, fontSize = 13, onChange }: { value: st
       extensions: [
         lineNumbers(), highlightActiveLineGutter(), highlightActiveLine(), history(), drawSelection(),
         foldGutter(), bracketMatching(), indentOnInput(),
+        search({ top: true }), highlightSelectionMatches(),
         syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-        keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
+        keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap, indentWithTab]),
         langFor(path),
         EditorView.lineWrapping,
         EditorView.theme({

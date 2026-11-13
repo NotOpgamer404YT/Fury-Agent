@@ -542,12 +542,20 @@ Authentication is a cookie (\`fury_session\`), so browser clients need no header
 | GET | \`/tasks/{id}\` | Task + messages |
 | DELETE | \`/tasks/{id}\` | — |
 | POST | \`/tasks/{id}/step\` | Advance one bounded step |
+| POST | \`/tasks/{id}/stream\` | Text/plain token stream for ASK/PLAN replies (AGENT mode uses \`/step\`) |
 | POST | \`/tasks/{id}/approve\` | \`{ approved: boolean }\` |
 | POST | \`/tasks/{id}/cancel\` | — |
 | POST | \`/tasks/{id}/resume\` | Continue after failure/cancel |
 | GET | \`/tasks/{id}/messages\` | Conversation history |
 | POST | \`/tasks/{id}/messages\` | \`{ content }\` follow-up instruction; reopens a finished task |
 | GET | \`/tasks/{id}/events\` | Progress timeline |
+
+## Streaming
+
+\`POST /api/v1/tasks/{id}/stream\` returns \`text/plain\` chunks as the model produces them, then persists the
+full assistant message, token usage and events before closing. Providers that ignore \`stream: true\` and answer
+with JSON are handled transparently. AGENT-mode tasks cannot use this endpoint: tool calls must pass permission
+checks and approval gates inside the bounded step endpoint.
 
 ## Usage & health
 
@@ -659,6 +667,12 @@ The agent used its step budget (\`maxSteps\`, default 25). Split the request int
 ## Task says another invocation is processing it
 
 The 5-minute lease from a previous request is still held. Wait for it to expire or press Resume; the lock is cleared when a request finishes normally.
+
+## Why doesn't a reply stream in AGENT mode?
+
+AGENT mode can request write tools, so every model turn must pass permission checks and possibly wait for your
+approval. Those turns run through the bounded step endpoint. ASK and PLAN replies stream token-by-token from
+\`POST /api/v1/tasks/{id}/stream\`.
 
 ## Are tests run?
 

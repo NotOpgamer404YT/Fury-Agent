@@ -70,12 +70,20 @@ Authentication is a cookie (`fury_session`), so browser clients need no headers.
 | GET | `/tasks/{id}` | Task + messages |
 | DELETE | `/tasks/{id}` | — |
 | POST | `/tasks/{id}/step` | Advance one bounded step |
+| POST | `/tasks/{id}/stream` | Text/plain token stream for ASK/PLAN replies (AGENT mode uses `/step`) |
 | POST | `/tasks/{id}/approve` | `{ approved: boolean }` |
 | POST | `/tasks/{id}/cancel` | — |
 | POST | `/tasks/{id}/resume` | Continue after failure/cancel |
 | GET | `/tasks/{id}/messages` | Conversation history |
 | POST | `/tasks/{id}/messages` | `{ content }` follow-up instruction; reopens a finished task |
 | GET | `/tasks/{id}/events` | Progress timeline |
+
+## Streaming
+
+`POST /api/v1/tasks/{id}/stream` returns `text/plain` chunks as the model produces them, then persists the
+full assistant message, token usage and events before closing. Providers that ignore `stream: true` and answer
+with JSON are handled transparently. AGENT-mode tasks cannot use this endpoint: tool calls must pass permission
+checks and approval gates inside the bounded step endpoint.
 
 ## Usage & health
 

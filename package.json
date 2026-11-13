@@ -2,7 +2,7 @@
   "name": "fury-agent",
   "version": "1.0.0",
   "private": true,
-  "description": "Fury Agent \u2014 open-source, self-hostable AI coding agent platform (Vercel-first, Next.js + PostgreSQL + Drizzle)",
+  "description": "Fury Agent — open-source, self-hostable AI coding agent platform (Vercel-first, Next.js + PostgreSQL + Drizzle)",
   "license": "MIT",
   "scripts": {
     "dev": "next dev",
@@ -25,6 +25,7 @@
     "@codemirror/lang-json": "^6.0.2",
     "@codemirror/lang-markdown": "^6.3.3",
     "@codemirror/language": "^6.11.3",
+    "@codemirror/search": "^6.7.2",
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.38.1",
     "@tanstack/react-query": "^5.62.7",

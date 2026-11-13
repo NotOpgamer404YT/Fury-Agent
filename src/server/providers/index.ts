@@ -137,6 +137,13 @@ export async function streamChat(p: ProviderConfig, messages: ChatMessage[], onT
     onToken(r.content);
     return r;
   }
+  // Some gateways ignore `stream: true` and answer with a normal JSON body.
+  if ((res.headers.get("content-type") ?? "").includes("application/json")) {
+    const j = await res.json().catch(() => ({}));
+    const content = j.choices?.[0]?.message?.content ?? "";
+    if (content) onToken(content);
+    return { content, promptTokens: j.usage?.prompt_tokens ?? 0, completionTokens: j.usage?.completion_tokens ?? 0 };
+  }
   let content = "";
   const reader = res.body.getReader();
   const decoder = new TextDecoder();

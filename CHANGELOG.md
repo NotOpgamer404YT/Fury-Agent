@@ -30,12 +30,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Bounded one-step-per-request execution with `locked_at` lease protection, checkpointed state, resume, cancel and retry.
 - 14-tool registry (`list_files`, `read_file`, `search_files`, `create_file`, `edit_file`, `delete_file`, `generate_patch`, `inspect_package_json`, `inspect_requirements`, `git_status`, `git_diff`, `create_branch`, `create_commit`, `create_pull_request`) with Zod schemas, permission levels and audit rows.
 - Approval workflow for write tools, with an Approvals page.
-- Streaming-style progress timeline, tool activity and markdown conversation history.
+- Token streaming for ASK/PLAN replies (`POST /api/v1/tasks/{id}/stream`) with persisted messages and usage; progress timeline, tool activity and markdown history in the task view.
+- Follow-up instructions on a task (`POST /api/v1/tasks/{id}/messages`) that reopen finished conversations.
+- Bounded retry for transient provider failures, surfaced as explicit retry events.
 
 **GitHub**
 - OAuth App flow with state validation, encrypted token storage, repo listing and import.
 - Repository browsing, file read/write, tree listing, branch creation, multi-file commits via blob→tree→commit, compare and pull requests.
-- CodeMirror 6 editor: multiple tabs, syntax highlighting, diff preview, font sizing, unsaved-change warnings, GitHub-backed commits.
+- CodeMirror 6 editor: multiple tabs, syntax highlighting, search and replace (Mod-F), bracket matching, auto-indentation, diff preview, font sizing, unsaved-change warnings, GitHub-backed commits.
 
 **Data**
 - Drizzle ORM schema with 14 tables (users, sessions, projects, github_connections, repositories, provider_configs, tasks, task_events, agent_messages, tool_executions, approvals, project_memories, model_usage, artifacts), foreign keys, indexes and timestamps.

@@ -33,7 +33,8 @@ Fury Agent is a Vercel-first, serverless AI development platform. You deploy **y
 | **Real GitHub integration** | REST + Git Database APIs: repo listing, file tree, file read/write, branches, blob→tree→commit, compare, pull requests. |
 | **Bring your own AI** | Google Gemini (native adapter) and any OpenAI-compatible endpoint: Groq, Cerebras, OpenRouter, FreeLLMAPI, OmniRoute, custom. Role-based model selection with priority fallback. |
 | **Encrypted credentials** | AES-256-GCM at rest with your `ENCRYPTION_KEY`. Keys are never returned by the API, never logged, never sent to the model. |
-| **CodeMirror 6 editor** | Multi-tab editing, syntax highlighting, diff preview, font sizing, GitHub-backed commits. |
+| **CodeMirror 6 editor** | Multi-tab editing, syntax highlighting, search/replace, diff preview, font sizing, GitHub-backed commits. |
+| **Streaming replies** | ASK/PLAN answers stream token-by-token and are persisted with usage; AGENT turns stay in the audited step loop. |
 | **Production-minded security** | bcrypt, DB-backed sessions, per-user ownership filters, Zod validation, rate limiting, path-traversal protection, audit tables. |
 | **Honest limits** | No shell, no test execution inside Vercel Functions, no in-memory queues. Documented instead of faked. |
 
@@ -122,7 +123,7 @@ docs/               Markdown documentation
 
 ## API (v1)
 
-`POST /api/v1/auth/{register,login,logout}` · `GET|POST /api/v1/projects` · `GET|POST /api/v1/providers` · `POST /api/v1/providers/{id}/test` · `GET /api/v1/models` · `GET /api/v1/github/repositories` · `POST /api/v1/github/{connect,import}` · `POST|GET /api/v1/tasks` · `POST /api/v1/tasks/{id}/{step,approve,cancel,resume}` · `GET /api/v1/tasks/{id}/events`
+`POST /api/v1/auth/{register,login,logout}` · `GET|POST /api/v1/projects` · `GET|POST /api/v1/providers` · `POST /api/v1/providers/{id}/test` · `GET /api/v1/models` · `GET /api/v1/github/repositories` · `POST /api/v1/github/{connect,import}` · `POST|GET /api/v1/tasks` · `POST /api/v1/tasks/{id}/{step,stream,approve,cancel,resume}` · `GET|POST /api/v1/tasks/{id}/messages` · `GET /api/v1/tasks/{id}/events`
 
 See [docs/api-reference](docs/api-reference.md).
 
