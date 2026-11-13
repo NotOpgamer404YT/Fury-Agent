@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+html, body { background: #080B14; color: #F8FAFC; }
+* { -webkit-tap-highlight-color: transparent; }
+body { font-family: Inter, system-ui, sans-serif; }
+.cm-editor { height: 100%; font-size: 13px; }
+.cm-editor .cm-scroller { overflow: auto; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+.prose-fury pre { background: #0B1220; border: 1px solid #1E293B; border-radius: 0.75rem; padding: 1rem; overflow-x: auto; }
+.prose-fury code { font-family: ui-monospace, monospace; font-size: 0.85em; }
+.prose-fury p, .prose-fury li { color: #CBD5E1; line-height: 1.7; }
+.prose-fury h1, .prose-fury h2, .prose-fury h3 { color: #F8FAFC; }
+.prose-fury a { color: #06B6D4; }
