@@ -54,7 +54,7 @@ Fury Agent refuses to pretend. These are documented, by design:
 
 | Requirement | Version |
 | --- | --- |
-| Node.js | 20 or newer |
+| Node.js | 22.x (pinned in \`engines\`; required by the Vitest 5 / jsdom 31 test toolchain and used by CI + Vercel) |
 | npm | 10 or newer |
 | PostgreSQL | 14+ (Neon, Supabase, or local) |
 | Git | any recent version |
@@ -169,6 +169,23 @@ All configuration is through environment variables. Only three are required.
 
 1. **AUTH_SECRET** — set the new value, deploy. Existing sessions become invalid; users sign in again.
 2. **ENCRYPTION_KEY** — rotation requires re-encryption, because stored ciphertext is bound to the old key. Procedure: keep the old key mounted as \`ENCRYPTION_KEY_OLD\`, add a small script that decrypts with the old key and re-encrypts with the new one, run it against \`provider_configs.api_key_encrypted\` and \`github_connections.access_token_encrypted\`, then remove the old key. Never rotate without a backup.
+
+## Dependency security
+
+Vercel blocks deploys that ship a known-vulnerable Next.js build, so treat upgrades as part of maintenance:
+
+\`\`\`bash
+npm audit --omit=dev --audit-level=high   # production dependency gate (runs in CI)
+npm audit                                 # full tree, including dev tooling
+\`\`\`
+
+The project tracks the latest patched releases: **Next.js 16.4**, React 19.3, Drizzle ORM 0.45, Zod 4.
+If your fork pins older versions, expect the Vercel security gate to reject the build — upgrade instead of
+bypassing it.
+
+Runtime dependencies currently report **no advisories** (\`npm audit --omit=dev\` → 0 vulnerabilities). The full
+tree may still show a few **moderate, development-only** findings inside \`drizzle-kit\`'s legacy \`@esbuild-kit\`
+loader, which never reaches a deployed function. They are tracked rather than hidden.
 
 ## Security rules
 
@@ -403,6 +420,13 @@ Migrations are a build-time/manual step. Running drizzle-kit during the Vercel b
 
 Because every step is bounded and checkpointed, a shorter duration degrades throughput, not correctness: the client simply makes more step requests.
 
+## Security gate on Vercel
+
+Vercel inspects your dependency tree during the build and blocks deployment when it detects a vulnerable
+Next.js version ("Vulnerable version of Next.js detected"). Fury Agent tracks patched releases, so keep
+\`package-lock.json\` committed and do not downgrade. If a build is blocked after upgrading, clear the Vercel
+build cache and redeploy.
+
 ## Post-deploy checklist
 
 - [ ] \`/api/v1/health\` reports database **configured** and encryption **configured**.
@@ -431,7 +455,7 @@ Serverless cold starts add latency to the first step. Providers with fast first-
 | --- | --- |
 | Passwords | bcrypt, cost 12. Never logged, never returned. |
 | Sessions | HS256 JWT in an httpOnly, SameSite=Lax cookie (7 days) carrying a \`sid\`; the \`sessions\` row is authoritative, so logout revokes immediately and expired rows are rejected. |
-| Route protection | \`middleware.ts\` redirects unauthenticated page requests; every private handler calls \`requireUser()\`. |
+| Route protection | \`src/proxy.ts\` (Next.js 16 Proxy, formerly middleware) redirects unauthenticated page requests; every private handler calls \`requireUser()\`. |
 | Ownership | Every query filters by \`userId\`. Cross-account reads return 404, not 403, to avoid leaking existence. |
 | Credential storage | AES-256-GCM with a per-record IV and auth tag; master key from \`ENCRYPTION_KEY\`. |
 | Secret exposure | API responses never include keys or ciphertext; error messages are scrubbed of token-shaped strings. |

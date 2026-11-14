@@ -40,6 +40,13 @@ Migrations are a build-time/manual step. Running drizzle-kit during the Vercel b
 
 Because every step is bounded and checkpointed, a shorter duration degrades throughput, not correctness: the client simply makes more step requests.
 
+## Security gate on Vercel
+
+Vercel inspects your dependency tree during the build and blocks deployment when it detects a vulnerable
+Next.js version ("Vulnerable version of Next.js detected"). Fury Agent tracks patched releases, so keep
+`package-lock.json` committed and do not downgrade. If a build is blocked after upgrading, clear the Vercel
+build cache and redeploy.
+
 ## Post-deploy checklist
 
 - [ ] `/api/v1/health` reports database **configured** and encryption **configured**.

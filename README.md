@@ -7,7 +7,7 @@ Ask, plan and ship real changes to your own GitHub repositories — with your ow
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-8B5CF6.svg)](LICENSE)
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/NotOpgamer404YT/Fury-Agent)
-![Next.js](https://img.shields.io/badge/Next.js-15-black)
+![Next.js](https://img.shields.io/badge/Next.js-16-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Drizzle-336791)
 
@@ -29,6 +29,7 @@ Fury Agent is a Vercel-first, serverless AI development platform. You deploy **y
 
 | | |
 | --- | --- |
+| **Hardened dependencies** | Next.js 16, React 19.3, Drizzle 0.45, Zod 4 — `npm audit` reports zero high/critical findings, and CI fails on new high-severity production advisories. |
 | **Serverless agent engine** | Persistent state machine with bounded steps, database checkpoints, resume, cancel and approval gates. No daemons, no Docker, no VPS. |
 | **Real GitHub integration** | REST + Git Database APIs: repo listing, file tree, file read/write, branches, blob→tree→commit, compare, pull requests. |
 | **Bring your own AI** | Google Gemini (native adapter) and any OpenAI-compatible endpoint: Groq, Cerebras, OpenRouter, FreeLLMAPI, OmniRoute, custom. Role-based model selection with priority fallback. |
@@ -43,6 +44,8 @@ Fury Agent is a Vercel-first, serverless AI development platform. You deploy **y
 The landing page includes a product preview; the dashboard, agent task view and editor are live after you deploy.
 
 ## Quick start (local)
+
+Requires **Node.js 22.x** (pinned in `engines`, used by CI and Vercel).
 
 ```bash
 git clone https://github.com/NotOpgamer404YT/Fury-Agent.git
@@ -131,7 +134,8 @@ See [docs/api-reference](docs/api-reference.md).
 
 ```bash
 npm run typecheck   # TypeScript strict
-npm test            # Vitest: auth, encryption, provider selection, tools, paths, task state
+npm test            # Vitest: auth, encryption, providers, tools, paths, task state, agent loop, RTL components
+npm audit --omit=dev --audit-level=high  # dependency gate (also enforced in CI)
 npm run build       # production build
 
 # Optional end-to-end (needs browsers installed locally):
@@ -145,6 +149,7 @@ The Playwright suite is opt-in: it requires browser binaries and a running insta
 
 - **No shell execution.** Vercel Functions offer no persistent shell. Repository edits go through the GitHub API. An `ExecutionProvider` interface exists for wiring an external runner; it ships empty and disabled.
 - **Tests are not executed.** GitHub Actions status is displayed when workflows exist; otherwise the UI states that tests were not run.
+- **No database in dev?** The in-memory fallback shares state across route handlers and server components within one Node process via a `globalThis` singleton, so the preview works — it is still ephemeral, single-process and not for production.
 - **Stepping, not background jobs.** A task advances when the client calls `/step`. Progress is checkpointed, so reloads, timeouts and failures are recoverable.
 - **In-memory rate limiting.** Per-instance only; move counters to PostgreSQL for multi-instance quotas.
 

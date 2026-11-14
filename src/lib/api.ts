@@ -11,7 +11,7 @@ export function unauthorized() {
   return fail("Unauthorized", 401);
 }
 export function serverError(e: unknown) {
-  if (e instanceof ZodError) return fail(e.errors.map((x) => `${x.path.join(".")}: ${x.message}`).join("; "), 422);
+  if (e instanceof ZodError) return fail(e.issues.map((x) => `${x.path.join(".")}: ${x.message}`).join("; "), 422);
   const msg = e instanceof Error ? e.message : "Internal error";
   if (msg === "Unauthorized") return unauthorized();
   // Never leak secrets — strip anything that looks like a token

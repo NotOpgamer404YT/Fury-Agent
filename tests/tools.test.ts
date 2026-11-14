@@ -23,6 +23,23 @@ describe("tool execution safety", () => {
     expect(out.patch).toContain("+const a = 2;");
   });
 
+  it("advertises explicit JSON schemas to the model", () => {
+    const defs = toolDefinitionsForModel("agent");
+    const commit = defs.find((d) => d.function.name === "create_commit")!;
+    expect(commit.function.parameters.type).toBe("object");
+    expect(commit.function.parameters.required).toEqual(["files", "message"]);
+    expect((commit.function.parameters.properties as any).files.type).toBe("array");
+
+    const read = defs.find((d) => d.function.name === "read_file")!;
+    expect(read.function.parameters.properties.path).toMatchObject({ type: "string" });
+    expect(read.function.parameters.required).toEqual(["path"]);
+
+    for (const d of defs) {
+      expect(d.function.parameters.type).toBe("object");
+      expect(typeof d.function.description).toBe("string");
+    }
+  });
+
   it("exports only allowed tools per mode", () => {
     const ask = toolDefinitionsForModel("ask").map((t) => t.function.name);
     expect(ask).toContain("read_file");

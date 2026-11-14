@@ -28,7 +28,14 @@ class MemoryStore {
   now() { return new Date(); }
 }
 
-export const store = new MemoryStore();
+/**
+ * The instance lives on `globalThis` so every module graph in the same Node
+ * process (route handlers, server components, proxy) sees the same data.
+ * Without this, dev/preview sessions appeared to vanish between an API call
+ * and a server-rendered page. Still process-local and ephemeral by design.
+ */
+const globalRef = globalThis as unknown as { __furyMemoryStore?: MemoryStore };
+export const store = (globalRef.__furyMemoryStore ??= new MemoryStore());
 
 export function findUserByEmail(email: string): Row | undefined {
   for (const u of store.users.values()) if (u.email === email) return u;
