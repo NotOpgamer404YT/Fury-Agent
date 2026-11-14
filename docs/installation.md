@@ -4,7 +4,7 @@
 
 | Requirement | Version |
 | --- | --- |
-| Node.js | 20 or newer |
+| Node.js | 20.9+ (22.x recommended; the app is tested on 22) |
 | npm | 10 or newer |
 | PostgreSQL | 14+ (Neon, Supabase, or local) |
 | Git | any recent version |

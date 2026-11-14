@@ -16,10 +16,19 @@ export type ToolContext = {
   mode: "ask" | "plan" | "agent";
 };
 
+export type JsonSchema = {
+  type: "object";
+  properties: Record<string, unknown>;
+  required?: string[];
+};
+
 export type ToolDef = {
   name: string;
   description: string;
+  /** Runtime validation of the model's arguments. */
   schema: z.ZodTypeAny;
+  /** Explicit JSON schema advertised to the model (kept separate from Zod internals). */
+  parameters: JsonSchema;
   requires: "read" | "write" | "git";
   needsApproval: boolean;
   execute: (ctx: ToolContext, args: any) => Promise<unknown>;
@@ -34,6 +43,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "list_files", description: "List files in a repository directory (recursive tree, capped).", requires: "read", needsApproval: false,
     schema: z.object({ path: z.string().optional() }),
+    parameters: { type: "object", properties: { path: { type: "string", description: "Optional directory prefix to filter the listing" } } },
     async execute(ctx, args) {
       const { owner, repo } = needRepo(ctx);
       const tree = await ctx.github!.listTree(owner, repo, ctx.branch);
@@ -45,6 +55,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "read_file", description: "Read a file from the repository.", requires: "read", needsApproval: false,
     schema: z.object({ path: z.string().min(1) }),
+    parameters: { type: "object", properties: { path: { type: "string", description: "Repository-relative file path" } }, required: ["path"] },
     async execute(ctx, args) {
       const { owner, repo } = needRepo(ctx);
       const content = await ctx.github!.getFileContent(owner, repo, assertSafePath(args.path), ctx.branch);
@@ -54,6 +65,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "search_files", description: "Search repository code via GitHub code search.", requires: "read", needsApproval: false,
     schema: z.object({ query: z.string().min(1).max(500) }),
+    parameters: { type: "object", properties: { query: { type: "string", description: "Code search query" } }, required: ["query"] },
     async execute(ctx, args) {
       const { owner, repo } = needRepo(ctx);
       const r = await ctx.github!.searchCode(owner, repo, args.query);
@@ -63,6 +75,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "create_file", description: "Create a new file in the repository (committed to the task branch).", requires: "write", needsApproval: true,
     schema: z.object({ path: z.string().min(1), content: z.string().max(200000) }),
+    parameters: { type: "object", properties: { path: { type: "string", description: "Repository-relative file path" }, content: { type: "string", description: "Full file contents" } }, required: ["path", "content"] },
     async execute(ctx, args) {
       const { owner, repo } = needRepo(ctx);
       const sha = await ctx.github!.commitFiles(owner, repo, ctx.branch, [{ path: assertSafePath(args.path), content: args.content }], `Create ${args.path}`);
@@ -72,6 +85,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "edit_file", description: "Create or replace a file's contents in the repository.", requires: "write", needsApproval: true,
     schema: z.object({ path: z.string().min(1), content: z.string().max(200000) }),
+    parameters: { type: "object", properties: { path: { type: "string", description: "Repository-relative file path" }, content: { type: "string", description: "Replacement file contents" } }, required: ["path", "content"] },
     async execute(ctx, args) {
       const { owner, repo } = needRepo(ctx);
       const sha = await ctx.github!.commitFiles(owner, repo, ctx.branch, [{ path: assertSafePath(args.path), content: args.content }], `Edit ${args.path}`);
@@ -81,6 +95,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "delete_file", description: "Delete a file by committing an empty tree entry removal (via tree without the path is not supported by Git Database API alone; implemented as commit with file emptied + note). Use edit_file to remove content; true deletion requires a tree rebuild.", requires: "write", needsApproval: true,
     schema: z.object({ path: z.string().min(1) }),
+    parameters: { type: "object", properties: { path: { type: "string", description: "Repository-relative file path" } }, required: ["path"] },
     async execute(ctx, args) {
       const { owner, repo } = needRepo(ctx);
       // Honest implementation: GitHub Git Database API deletes by omitting the path
@@ -100,6 +115,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "generate_patch", description: "Generate a unified diff preview between two file contents (no commit).", requires: "read", needsApproval: false,
     schema: z.object({ path: z.string().min(1), before: z.string().max(200000), after: z.string().max(200000) }),
+    parameters: { type: "object", properties: { path: { type: "string" }, before: { type: "string" }, after: { type: "string" } }, required: ["path", "before", "after"] },
     async execute(_ctx, args) {
       const a = args.before.split("\n"), b = args.after.split("\n");
       const lines: string[] = [`--- a/${args.path}`, `+++ b/${args.path}`];
@@ -114,6 +130,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "inspect_package_json", description: "Read and summarize package.json (scripts, deps).", requires: "read", needsApproval: false,
     schema: z.object({}),
+    parameters: { type: "object", properties: {} },
     async execute(ctx) {
       const { owner, repo } = needRepo(ctx);
       const raw = await ctx.github!.getFileContent(owner, repo, "package.json", ctx.branch);
@@ -124,6 +141,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "inspect_requirements", description: "Read requirements.txt / pyproject.toml if present.", requires: "read", needsApproval: false,
     schema: z.object({}),
+    parameters: { type: "object", properties: {} },
     async execute(ctx) {
       const { owner, repo } = needRepo(ctx);
       const out: Record<string, string> = {};
@@ -137,6 +155,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "git_status", description: "Show repository metadata and current branch info.", requires: "git", needsApproval: false,
     schema: z.object({}),
+    parameters: { type: "object", properties: {} },
     async execute(ctx) {
       const { owner, repo } = needRepo(ctx);
       const info = await ctx.github!.getRepo(owner, repo);
@@ -147,6 +166,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "git_diff", description: "Show diff between base branch and current branch.", requires: "git", needsApproval: false,
     schema: z.object({ baseBranch: z.string().optional() }),
+    parameters: { type: "object", properties: { baseBranch: { type: "string", description: "Branch to compare against, default main" } } },
     async execute(ctx, args) {
       const { owner, repo } = needRepo(ctx);
       const cmp = await ctx.github!.compare(owner, repo, args.baseBranch ?? "main", ctx.branch);
@@ -156,6 +176,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "create_branch", description: "Create a new branch from the default branch.", requires: "git", needsApproval: true,
     schema: z.object({ branch: z.string().min(1).max(200) }),
+    parameters: { type: "object", properties: { branch: { type: "string", description: "New branch name" } }, required: ["branch"] },
     async execute(ctx, args) {
       const { owner, repo } = needRepo(ctx);
       await ctx.github!.createBranch(owner, repo, args.branch, ctx.branch);
@@ -165,6 +186,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "create_commit", description: "Commit staged file changes (creates a commit on the task branch).", requires: "git", needsApproval: true,
     schema: z.object({ files: z.array(z.object({ path: z.string(), content: z.string().max(200000) })).min(1).max(50), message: z.string().min(1).max(1000) }),
+    parameters: { type: "object", properties: { files: { type: "array", items: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } }, required: ["path", "content"] } }, message: { type: "string" } }, required: ["files", "message"] },
     async execute(ctx, args) {
       const { owner, repo } = needRepo(ctx);
       const sha = await ctx.github!.commitFiles(owner, repo, ctx.branch, args.files.map((f: any) => ({ path: assertSafePath(f.path), content: f.content })), args.message);
@@ -174,6 +196,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "create_pull_request", description: "Open a pull request from the task branch to the base branch.", requires: "git", needsApproval: true,
     schema: z.object({ title: z.string().min(1).max(300), body: z.string().max(20000).optional(), baseBranch: z.string().optional() }),
+    parameters: { type: "object", properties: { title: { type: "string" }, body: { type: "string" }, baseBranch: { type: "string", description: "Target branch, default main" } }, required: ["title"] },
     async execute(ctx, args) {
       const { owner, repo } = needRepo(ctx);
       const pr = await ctx.github!.createPullRequest(owner, repo, args.title, args.body ?? "", ctx.branch, args.baseBranch ?? "main");
@@ -195,22 +218,8 @@ export function isToolAllowed(tool: ToolDef, mode: "ask" | "plan" | "agent"): bo
 export function toolDefinitionsForModel(mode: "ask" | "plan" | "agent") {
   return TOOLS.filter((t) => isToolAllowed(t, mode)).map((t) => ({
     type: "function" as const,
-    function: { name: t.name, description: t.description, parameters: zodToJsonSchema(t.schema) },
+    function: { name: t.name, description: t.description, parameters: t.parameters },
   }));
-}
-
-function zodToJsonSchema(schema: z.ZodTypeAny): Record<string, unknown> {
-  // Minimal conversion: use Zod's shape when available, else empty object.
-  const s: any = schema;
-  if (s?.shape) {
-    const properties: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(s.shape)) {
-      const t = (v as any)?._def?.typeName ?? "";
-      properties[k] = { type: t.includes("String") ? "string" : t.includes("Number") ? "number" : t.includes("Boolean") ? "boolean" : t.includes("Array") ? "array" : "string" };
-    }
-    return { type: "object", properties };
-  }
-  return { type: "object", properties: {} };
 }
 
 /**

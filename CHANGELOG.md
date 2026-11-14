@@ -3,6 +3,39 @@
 All notable changes to Fury Agent are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] — 2026-11-14
+
+### Security
+
+- **Upgraded to Next.js 16.4.6** (from 15.1.6) and React 19.3.1, clearing the critical advisories that made
+  Vercel reject the previous deployment ("Vulnerable version of Next.js detected" / CVE-2025-66478 and the
+  related cache-poisoning, SSRF, middleware-bypass and image-optimizer issues).
+- **Drizzle ORM 0.45.4** — fixes the SQL-injection advisory affecting escaped identifiers.
+- **Zod 4.6.7** — fixes a memory-exhaustion advisory in constrained collections; validation schemas migrated
+  to the v4 API (`z.email()`, `z.url()`, `error.issues`).
+- **Vitest 5.1 / Vite 8** for dev tooling (clears the critical `tinypool`/`vitest` advisories).
+- CI now fails on new high-severity **production** advisories: `npm audit --omit=dev --audit-level=high`.
+- `engines.node` pinned to `22.x` so Vercel uses a supported, predictable runtime.
+
+### Fixed
+
+- **Agent: first step omitted the user prompt.** History was loaded before the prompt was persisted, so the
+  model received only the system message on the opening turn. The prompt is now included in the same step and
+  persisted, with a regression test that asserts the outgoing request carries it.
+- **Dev/preview sessions vanished between requests.** The no-database fallback store is now a `globalThis`
+  singleton, so route handlers and server components in the same process share users, sessions and tasks.
+- Tool contracts are now declared as **explicit JSON schemas** instead of being derived from Zod internals,
+  which had silently degraded every property to `string` after the Zod major upgrade.
+- Dashboard layout is explicitly `force-dynamic` (per-user data must never be prerendered or cached), and
+  `getSessionUser` no longer swallows unexpected errors as if the user were logged out.
+
+### Changed
+
+- `src/middleware.ts` → `src/proxy.ts` for the Next.js 16 Proxy convention.
+- `vercel.json` keeps only framework/build settings; per-route `maxDuration` exports are canonical.
+- `npm run lint` removed (`next lint` was dropped in Next 16); `npm run typecheck` is the static gate.
+- Playwright and React Testing Library suites documented as opt-in; component tests run in jsdom.
+
 ## [1.0.0] — 2026-11-13
 
 ### Added

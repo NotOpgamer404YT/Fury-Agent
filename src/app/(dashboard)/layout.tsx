@@ -3,6 +3,9 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 
+// Every dashboard route is per-user: never prerender or cache it.
+export const dynamic = "force-dynamic";
+
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await getSessionUser();
   if (!user) redirect("/login");

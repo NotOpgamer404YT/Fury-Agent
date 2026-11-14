@@ -2,17 +2,17 @@ import { z } from "zod";
 
 export const registerSchema = z.object({
   name: z.string().min(1).max(100),
-  email: z.string().email().max(255),
+  email: z.email().max(255),
   password: z.string().min(8).max(128),
 });
 export const loginSchema = z.object({
-  email: z.string().email().max(255),
+  email: z.email().max(255),
   password: z.string().min(1).max(128),
 });
 export const providerSchema = z.object({
   name: z.string().min(1).max(100),
   providerType: z.enum(["openai-compatible", "gemini", "freellmapi", "omniroute", "groq", "cerebras", "openrouter", "custom"]).default("openai-compatible"),
-  baseUrl: z.string().url().max(500),
+  baseUrl: z.url().max(500),
   apiKey: z.string().min(1).max(2000).optional(),
   modelId: z.string().min(1).max(200),
   contextWindow: z.number().int().min(1024).max(2000000).default(128000),

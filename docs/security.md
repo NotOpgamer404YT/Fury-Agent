@@ -6,7 +6,7 @@
 | --- | --- |
 | Passwords | bcrypt, cost 12. Never logged, never returned. |
 | Sessions | HS256 JWT in an httpOnly, SameSite=Lax cookie (7 days) carrying a `sid`; the `sessions` row is authoritative, so logout revokes immediately and expired rows are rejected. |
-| Route protection | `middleware.ts` redirects unauthenticated page requests; every private handler calls `requireUser()`. |
+| Route protection | `src/proxy.ts` (Next.js 16 Proxy, formerly middleware) redirects unauthenticated page requests; every private handler calls `requireUser()`. |
 | Ownership | Every query filters by `userId`. Cross-account reads return 404, not 403, to avoid leaking existence. |
 | Credential storage | AES-256-GCM with a per-record IV and auth tag; master key from `ENCRYPTION_KEY`. |
 | Secret exposure | API responses never include keys or ciphertext; error messages are scrubbed of token-shaped strings. |

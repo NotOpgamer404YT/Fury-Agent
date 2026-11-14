@@ -56,7 +56,12 @@ export async function destroySession(): Promise<void> {
   await clearSessionCookie();
 }
 
-/** Resolve the session user, enforcing DB expiry. */
+/**
+ * Resolve the session user, enforcing DB expiry.
+ * Only JWT verification failures are treated as "no session" (handled in
+ * readSessionJwt). Unexpected failures — including dynamic-rendering errors —
+ * propagate instead of silently looking like a logout.
+ */
 export async function getSessionUser(): Promise<SessionUser | null> {
   const current = await readSessionJwt();
   if (!current) return null;

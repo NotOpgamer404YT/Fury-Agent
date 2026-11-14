@@ -149,8 +149,13 @@ export async function runAgentStep(taskId: string): Promise<{ status: string; st
     if (task.status === "pending") { task.status = "planning"; await addEvent(taskId, "planning", "Planning started"); }
     else if (task.status === "planning") { task.status = "running"; await addEvent(taskId, "running", "Execution started"); }
 
-    const history = await loadHistory(taskId);
-    if (history.length === 0) await addMessage(taskId, "user", task.prompt);
+    let history = await loadHistory(taskId);
+    if (history.length === 0) {
+      // Persist the prompt and make sure THIS step actually includes it —
+      // loading history above returned before the message existed.
+      await addMessage(taskId, "user", task.prompt);
+      history = [{ role: "user", content: task.prompt }];
+    }
 
     const ctx = await buildToolContext(task);
     const memory = await buildMemoryContext(task.projectId ?? null);
