@@ -3,7 +3,29 @@
 All notable changes to Fury Agent are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.1] — 2026-11-14
+## [1.0.2] — 2026-11-13
+
+### Security
+
+- **Production fails closed without `AUTH_SECRET`.** The development signing key is
+  public (it is in this repository), so a deployment without `AUTH_SECRET` used to
+  be able to sign cookies with a known secret. In production, sign-in now returns
+  an explicit configuration error instead.
+- `GET /api/v1/health` continues to report configuration as booleans only.
+
+### Added
+
+- **Setup banner** in the dashboard shell: a persistent, server-rendered warning
+  whenever `DATABASE_URL`, `AUTH_SECRET` or `ENCRYPTION_KEY` is missing, linking to
+  the matching docs page. It disappears as soon as the value is set.
+- `src/lib/env-status.ts` with unit tests (5).
+
+### Changed
+
+- CI and the migration-drift workflow run on Node 22, matching `engines.node` and
+  the Vercel runtime; `jsdom@31` requires `^22.22.2`.
+
+## [1.0.1] — 2026-11-13
 
 ### Security
 

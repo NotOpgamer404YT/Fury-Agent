@@ -13,9 +13,36 @@ import { createHash, randomBytes } from "crypto";
 export const SESSION_COOKIE = "fury_session";
 export const SESSION_DAYS = 7;
 
+/** Local-dev only. This value is public (it ships in the repo), so production must never use it. */
+const DEV_FALLBACK_SECRET = "dev-only-insecure-secret-change-me";
+
+/**
+ * Signing key for session cookies.
+ *
+ * Production fails closed: without AUTH_SECRET we throw instead of silently
+ * signing cookies with a key that is published in this repository. Auth routes
+ * surface that as a 500 with a message telling the operator what to set, which
+ * is far better than a deployment that looks healthy but has forgeable sessions.
+ */
+export function resolveAuthSecret(raw: string | undefined, nodeEnv: string | undefined): string {
+  if (raw) return raw;
+  if (nodeEnv === "production") {
+    throw new Error("AUTH_SECRET is not configured — set a 32-byte secret in your environment variables.");
+  }
+  return DEV_FALLBACK_SECRET;
+}
+
+/**
+ * True when sessions can be signed safely. Development falls back to a local
+ * key; production requires an explicit AUTH_SECRET.
+ */
+export function isAuthConfigured(): boolean {
+  return Boolean(process.env.AUTH_SECRET) || process.env.NODE_ENV !== "production";
+}
+
 export function authSecret(): Uint8Array {
-  const raw = process.env.AUTH_SECRET ?? "dev-only-insecure-secret-change-me";
-  return new TextEncoder().encode(raw);
+  // NODE_ENV is inlined at build time, so the decision itself lives in a pure helper.
+  return new TextEncoder().encode(resolveAuthSecret(process.env.AUTH_SECRET, process.env.NODE_ENV));
 }
 
 export function newSessionToken(): string {
