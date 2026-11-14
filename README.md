@@ -45,6 +45,8 @@ The landing page includes a product preview; the dashboard, agent task view and 
 
 ## Quick start (local)
 
+Requires **Node.js 22.x** (pinned in `engines`, used by CI and Vercel).
+
 ```bash
 git clone https://github.com/NotOpgamer404YT/Fury-Agent.git
 cd Fury-Agent

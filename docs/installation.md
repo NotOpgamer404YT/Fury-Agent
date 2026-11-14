@@ -4,7 +4,7 @@
 
 | Requirement | Version |
 | --- | --- |
-| Node.js | 20.9+ (22.x recommended; the app is tested on 22) |
+| Node.js | 22.x (pinned in `engines`; required by the Vitest 5 / jsdom 31 test toolchain and used by CI + Vercel) |
 | npm | 10 or newer |
 | PostgreSQL | 14+ (Neon, Supabase, or local) |
 | Git | any recent version |
