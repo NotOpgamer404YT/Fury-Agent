@@ -4,7 +4,7 @@ import { schema } from "@/lib/database/schema";
 import { and, eq, lt } from "drizzle-orm";
 import { store, findUserByEmail } from "@/lib/store";
 import {
-  SESSION_COOKIE, SESSION_DAYS, authSecret, newSessionToken, hashToken,
+  SESSION_COOKIE, SESSION_DAYS, authSecret, isAuthConfigured, newSessionToken, hashToken,
   signSessionJwt, readSessionJwt, setSessionCookie, clearSessionCookie,
 } from "./session";
 
@@ -133,4 +133,4 @@ export async function deleteUser(userId: string): Promise<void> {
   for (const [k, v] of store.sessions) if (v.userId === userId) store.sessions.delete(k);
 }
 
-export { authSecret };
+export { authSecret, isAuthConfigured };

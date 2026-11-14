@@ -43,6 +43,17 @@ Fury Agent is a Vercel-first, serverless AI development platform. You deploy **y
 
 The landing page includes a product preview; the dashboard, agent task view and editor are live after you deploy.
 
+## Production checklist
+
+Deployment succeeds before it is configured, so the app refuses to pretend:
+
+- `AUTH_SECRET` is required in production — sign-in fails closed instead of signing
+  cookies with the public development key.
+- `ENCRYPTION_KEY` is required before any provider key can be stored (AES-256-GCM).
+- Without `DATABASE_URL` the dashboard shows a banner explaining that state is
+  process-local and lost on restart. Set it for anything beyond a UI preview.
+- `GET /api/v1/health` reports which services are configured, as booleans only.
+
 ## Quick start (local)
 
 Requires **Node.js 22.x** (pinned in `engines`, used by CI and Vercel).

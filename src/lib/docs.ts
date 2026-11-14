@@ -471,6 +471,23 @@ Serverless cold starts add latency to the first step. Providers with fast first-
 
 The limiter is in-memory per serverless instance. Under real load, move counters to PostgreSQL (a \`rate_limits\` table with an upsert) or your edge provider's limiter. This is documented rather than hidden: the in-memory limiter is a guard rail, not a hard quota.
 
+## Fail-closed configuration
+
+This is a self-hosted product, so a missing setting is treated as a broken
+deployment rather than something to paper over:
+
+- **Missing \`AUTH_SECRET\` in production** — sign-in and registration fail with an
+  explicit error. The app will not sign sessions with the development key that
+  ships in this repository, because a public signing key means anyone can mint a
+  cookie.
+- **Missing \`ENCRYPTION_KEY\`** — adding a provider fails with a clear message
+  instead of storing a plaintext API key.
+- **Missing \`DATABASE_URL\`** — the app still boots so you can preview the UI,
+  but every dashboard page carries a banner saying that accounts, tasks and
+  checkpoints live in process memory and disappear on restart.
+- **\`GET /api/v1/health\`** returns which services are configured as booleans. It
+  never returns secret values.
+
 ## What you must do
 
 1. Generate unique \`AUTH_SECRET\` and \`ENCRYPTION_KEY\` values. Never reuse the example values.
